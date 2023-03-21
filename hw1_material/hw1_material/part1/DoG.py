@@ -16,34 +16,53 @@ class Difference_of_Gaussian(object):
        
         gaussian_images_1st = [cv2.GaussianBlur (image, (0, 0), self.sigma**n) for n in range(1,5)]
         y,x = image.shape
-        image_2st = cv2.resize(image, (int(x/2), int(y/2)))
+        image_2st = cv2.resize(image, (int(x/2), int(y/2)), interpolation = cv2.INTER_NEAREST)
         gaussian_images_2st = [cv2.GaussianBlur (image_2st, (0, 0), self.sigma**n) for n in range(1,5)]
 
         DoG1 = []
         DoG1.append(image - gaussian_images_1st[0])
-        DoG1 = DoG1 + [gaussian_images_1st[n+1] - gaussian_images_1st[n] for n in range(3)]
+        DoG1 = DoG1 + [cv2.subtract(gaussian_images_1st[n+1] , gaussian_images_1st[n]) for n in range(3)]
 
         DoG2 = []
         DoG2.append(image_2st - gaussian_images_2st[0])
-        DoG2 = DoG2 + [gaussian_images_2st[n+1] - gaussian_images_2st[n] for n in range(3)]
-        np.dstack([a,a])
+        DoG2 = DoG2 + [cv2.subtract(gaussian_images_2st[n+1] , gaussian_images_2st[n]) for n in range(3)]
         for n in range(4):
-            cv2.imwrite("DoG1-" + str(n+1) + ".png", DoG1[n])
-            cv2.imwrite("DoG2-" + str(n+1) + ".png", DoG2[n])
+            cv2.imwrite("DoG1-" + str(n+1) + ".png", DoG1[n].astype(np.uint8))
+            cv2.imwrite("DoG2-" + str(n+1) + ".png", DoG2[n].astype(np.uint8))
 
 
         # Step 2: Subtract 2 neighbor images to get DoG images (4 images per octave, 2 octave in total)
         # - Function: cv2.subtract(second_image, first_image)
-        dog_images = []
+        #DoG1 = [(DoG-DoG.min())/((DoG-DoG.min()).max())*255  for DoG in DoG1]
+        #DoG2 = [(DoG-DoG.min())/((DoG-DoG.min()).max())*255  for DoG in DoG2]
+        nb_img1 = np.dstack([DoG1[:3]])
+        nb_img2 = np.dstack([DoG1[1:]])
+
+        def get_keypoint(nb_img):
+            windows = np.lib.stride_tricks.sliding_window_view(nb_img,(3,3,3))[0]
+            keypoints = []
+            for y in range(windows.shape[0]):
+                for x in range(windows.shape[1]):
+                    window = windows[y, x]
+                    center = window[ 1, 1, 1]
+                    if abs(center)<self.threshold:
+                        continue
+                    #elif (window >= center).all() or (window <= center).all():
+                    elif (window.max() == center) or (window.min() == center):
+                        keypoints.append([y,x])
+            return np.array(keypoints)
+        keypoints1 = get_keypoint(nb_img1)
+        keypoints2 = get_keypoint(nb_img2)
 
         # Step 3: Thresholding the value and Find local extremum (local maximun and local minimum)
         #         Keep local extremum as a keypoint
 
         # Step 4: Delete duplicate keypoints
         # - Function: np.unique
-
-
         # sort 2d-point by y, then by x
-
+        print(len(keypoints1))
+        print(len(keypoints2))
+        keypoints = np.vstack([keypoints1, keypoints2])
+        keypoints = np.unique(keypoints.view('c8')).view('i4').reshape((-1,2))
         #keypoints = keypoints[np.lexsort((keypoints[:,1],keypoints[:,0]))] 
-        #return keypoints
+        return keypoints
