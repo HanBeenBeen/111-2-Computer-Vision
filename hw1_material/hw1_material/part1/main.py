@@ -23,5 +23,6 @@ def main():
     part1 = Difference_of_Gaussian(args.threshold)
     part1.get_keypoints(img)
 
+
 if __name__ == '__main__':
     main()

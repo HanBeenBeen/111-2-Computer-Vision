@@ -37,6 +37,8 @@ class Difference_of_Gaussian(object):
         #DoG2 = [(DoG-DoG.min())/((DoG-DoG.min()).max())*255  for DoG in DoG2]
         nb_img1 = np.dstack([DoG1[:3]])
         nb_img2 = np.dstack([DoG1[1:]])
+        nb_img3 = np.dstack([DoG2[:3]])
+        nb_img4 = np.dstack([DoG2[1:]])
 
         def get_keypoint(nb_img):
             windows = np.lib.stride_tricks.sliding_window_view(nb_img,(3,3,3))[0]
@@ -53,16 +55,21 @@ class Difference_of_Gaussian(object):
             return np.array(keypoints)
         keypoints1 = get_keypoint(nb_img1)
         keypoints2 = get_keypoint(nb_img2)
-
+        keypoints3 = get_keypoint(nb_img3)*2
+        keypoints4 = get_keypoint(nb_img4)*2
         # Step 3: Thresholding the value and Find local extremum (local maximun and local minimum)
         #         Keep local extremum as a keypoint
 
         # Step 4: Delete duplicate keypoints
         # - Function: np.unique
         # sort 2d-point by y, then by x
+
+        #keypoints = np.unique(keypoints.view('c8')).view('i4').reshape((-1,2))
+        keypoints = np.unique(np.vstack([keypoints1, keypoints2, keypoints3, keypoints4]), axis=0)
+        #keypoints = keypoints[np.lexsort((keypoints[:,1],keypoints[:,0]))] 
         print(len(keypoints1))
         print(len(keypoints2))
-        keypoints = np.vstack([keypoints1, keypoints2])
-        keypoints = np.unique(keypoints.view('c8')).view('i4').reshape((-1,2))
-        #keypoints = keypoints[np.lexsort((keypoints[:,1],keypoints[:,0]))] 
+        print(len(keypoints3))
+        print(len(keypoints4))
+        print(len(keypoints))
         return keypoints
