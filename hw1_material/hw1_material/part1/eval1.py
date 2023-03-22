@@ -25,8 +25,8 @@ def main():
 
     # read GT
     keypoints_gt = np.load(args.gt_path)
-    return  keypoints_gt
+    return  keypoints,keypoints_gt
 
 
 if __name__ == '__main__':
-   r=  main()
+   a,b=  main()
