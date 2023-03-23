@@ -19,23 +19,26 @@ class Difference_of_Gaussian(object):
         image_2st = cv2.resize(gaussian_images_1st[4], (int(x/2), int(y/2)), interpolation = cv2.INTER_NEAREST)
         gaussian_images_2st = [image_2st] + [cv2.GaussianBlur (image_2st, (0, 0), self.sigma**n) for n in range(1,5)]
 
-        DoG1 = [cv2.subtract(gaussian_images_1st[n+1] , gaussian_images_1st[n]) for n in range(4)]
-        DoG2 = [cv2.subtract(gaussian_images_2st[n+1] , gaussian_images_2st[n]) for n in range(4)]
-        for n in range(4):
-            cv2.imwrite("DoG1-" + str(n+1) + ".png", DoG1[n].astype(np.uint8))
-            cv2.imwrite("DoG2-" + str(n+1) + ".png", DoG2[n].astype(np.uint8))
-
-
         # Step 2: Subtract 2 neighbor images to get DoG images (4 images per octave, 2 octave in total)
         # - Function: cv2.subtract(second_image, first_image)
         #DoG1 = [(DoG-DoG.min())/((DoG-DoG.min()).max())*255  for DoG in DoG1]
         #DoG2 = [(DoG-DoG.min())/((DoG-DoG.min()).max())*255  for DoG in DoG2]
+        DoG1 = [cv2.subtract(gaussian_images_1st[n+1] , gaussian_images_1st[n]) for n in range(4)]
+        DoG2 = [cv2.subtract(gaussian_images_2st[n+1] , gaussian_images_2st[n]) for n in range(4)]
+        for n in range(4):
+            #cv2.imwrite("DoG1-" + str(n+1) + ".png", DoG1[n].astype(np.uint8))
+            #cv2.imwrite("DoG2-" + str(n+1) + ".png", DoG2[n].astype(np.uint8))
+            cv2.imwrite("DoG1-" + str(n+1) + ".png", cv2.normalize(DoG1[n]
+            , None, alpha=0,beta=255, norm_type=cv2.NORM_MINMAX))
+            cv2.imwrite("DoG-" + str(n+1) + ".png", cv2.normalize(DoG2[n]
+            , None, alpha=0,beta=255, norm_type=cv2.NORM_MINMAX))
 
         nb_img1 = np.array(DoG1[:3])
         nb_img2 = np.array(DoG1[1:])
         nb_img3 = np.array(DoG2[:3])
         nb_img4 = np.array(DoG2[1:])
-
+        # Step 3: Thresholding the value and Find local extremum (local maximun and local minimum)
+        #         Keep local extremum as a keypoint
         def get_keypoint(nb_img, m):
             windows = np.lib.stride_tricks.sliding_window_view(nb_img,(3,3,3))[0]
             keypoints = []
@@ -53,8 +56,6 @@ class Difference_of_Gaussian(object):
         keypoints2 = get_keypoint(nb_img2, 1)
         keypoints3 = get_keypoint(nb_img3, 2)
         keypoints4 = get_keypoint(nb_img4, 2)
-        # Step 3: Thresholding the value and Find local extremum (local maximun and local minimum)
-        #         Keep local extremum as a keypoint
 
         # Step 4: Delete duplicate keypoints
         # - Function: np.unique
