@@ -30,7 +30,7 @@ class Difference_of_Gaussian(object):
             #cv2.imwrite("DoG2-" + str(n+1) + ".png", DoG2[n].astype(np.uint8))
             cv2.imwrite("DoG1-" + str(n+1) + ".png", cv2.normalize(DoG1[n]
             , None, alpha=0,beta=255, norm_type=cv2.NORM_MINMAX))
-            cv2.imwrite("DoG-" + str(n+1) + ".png", cv2.normalize(DoG2[n]
+            cv2.imwrite("DoG2-" + str(n+1) + ".png", cv2.normalize(DoG2[n]
             , None, alpha=0,beta=255, norm_type=cv2.NORM_MINMAX))
 
         nb_img1 = np.array(DoG1[:3])
