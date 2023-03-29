@@ -16,7 +16,10 @@ def main():
     img_gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
 
     ### TODO ###
+    a = Joint_bilateral_filter(5, 0.2)
+    r=a.joint_bilateral_filter(img_rgb, img_gray)
+    return r
 
 
 if __name__ == '__main__':
-    main()
+   r=main()
