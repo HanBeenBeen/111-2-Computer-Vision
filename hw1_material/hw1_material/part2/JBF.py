@@ -14,11 +14,19 @@ class Joint_bilateral_filter(object):
         padded_img = cv2.copyMakeBorder(img, self.pad_w, self.pad_w, self.pad_w, self.pad_w, BORDER_TYPE).astype(np.int32)
         padded_guidance = cv2.copyMakeBorder(guidance, self.pad_w, self.pad_w, self.pad_w, self.pad_w, BORDER_TYPE).astype(np.int32)
         
-        padded_guidance = padded_guidance /255
-        img = img/255
+        padded_guidance = cv2.normalize(padded_guidance, 
+                                        None, alpha=0,beta=1, norm_type=cv2.NORM_MINMAX)
+        
+        padded_img = cv2.normalize(padded_img, None, alpha=0,beta=1, norm_type=cv2.NORM_MINMAX)
         
         
         ### TODO ###
+        #Range kernel table
+        #-(Tp - Tq)^2 / (2sigma_r^2)
+        #Tq: centerixel value
+        Range_kernel = np.exp(-np.arange(256) * np.arange(256) / 
+                              (2 * self.sigma_r ** 2))
+        
         #Spacial kernel table
         #Index by abs(Tp-Tq)
         x, y = np.meshgrid(np.arange(2 * self.pad_w + 1) - self.pad_w
@@ -27,13 +35,7 @@ class Joint_bilateral_filter(object):
         Spacial_kernel = np.exp(-(x * x + y * y) 
                       / (2 * self.sigma_s ** 2))
         
-        #Range kernel table
-        #-(Tp - Tq)^2 / (2sigma_r^2)
-        #Tp: Totle of region ixel value
-        #Tq: centerixel value
-        #Index by abs(Tp-Tq)
-        Range_kernel = np.exp(-np.arange(256) * np.arange(256) / 
-                              (2 * self.sigma_r ** 2))
+
         
         
         #Determine the img format
@@ -43,15 +45,18 @@ class Joint_bilateral_filter(object):
             spliding = self.wndw_size
             center = (spliding-1) /2
             
-            Tp_box = np.lib.stride_tricks.sliding_window_view(img, 
+            Tp_box = np.lib.stride_tricks.sliding_window_view(padded_guidance, 
                                                      (spliding, spliding))
+            img_box = np.lib.stride_tricks.sliding_window_view(padded_img, 
+                                                     (spliding, spliding))
+            
             #Tp_box = img_sliding
-            Tq_box = Tp_box[:,:,center,center]
-            Tq_box = np.expand_dims(np.expand_dims(Tq_box, axis=2), axis=3)
+            Tq_boxCenter = Tp_box[:,:,center,center]
+            Tq_boxCenter = np.expand_dims(np.expand_dims(Tq_boxCenter, axis=2), axis=3)
             
-            wgt = Range_kernel[np.abs(Tp_box - Tq_box)] * Spacial_kernel
+            wgt = Range_kernel[np.abs(Tp_box - Tq_boxCenter)] * Spacial_kernel
             
-            output = np.sum(wgt - Tp_box ,axis = (2,3)) / np.sum(wgt, axis = (2,3))
+            output = np.sum(wgt * img_box ,axis = (2,3)) / np.sum(wgt, axis = (2,3))
         
         else:
             Range_kernel = np.exp(-np.arange(256) * np.arange(256) / (2*self.sigma_r**2))
