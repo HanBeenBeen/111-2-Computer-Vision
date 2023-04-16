@@ -23,7 +23,9 @@ class Joint_bilateral_filter(object):
         ### TODO ###
         #Range kernel table
         #-(Tp - Tq)^2 / (2sigma_r^2)
+        #Tp: Totle of region ixel value
         #Tq: centerixel value
+        #Index by abs(Tp-Tq)
         Range_kernel = np.exp(-np.arange(256) * np.arange(256) / 
                               (2 * self.sigma_r ** 2))
         
