@@ -39,15 +39,15 @@ def solve_homography(u, v):
     A2 = np.vstack((A_u2, A_v2))
 
     # TODO: 2.solve H with A
-    A2_inv = np.linalg.inv(A2)
-    HH = np.dot(A2_inv, v_xy)
-    HH = np.append(HH,1)
+    #A2_inv = np.linalg.inv(A2)
+    #HH = np.dot(A2_inv, v_xy)
+    #HH = np.append(HH,1)
 
     _, _, VT = np.linalg.svd(A)
     h = VT[-1,:] / VT[-1,-1]
     H = h.reshape(3, 3)
-    HH = H.reshape(3, 3)
-    return HH
+    #HH = H.reshape(3, 3)
+    return H
 
 
 def warping(src, dst, H, ymin, ymax, xmin, xmax, direction='b'):
@@ -117,6 +117,7 @@ def warping(src, dst, H, ymin, ymax, xmin, xmax, direction='b'):
         # TODO: 3.apply H to the source pixels and retrieve (u,v) pixels, then reshape to (ymax-ymin),(xmax-xmin)
         #ori 2 new
         v = H @ u
+        print(u)
         print(v[-1])
         v = v / v[-1]
         #取整
