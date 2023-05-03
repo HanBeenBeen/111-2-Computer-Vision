@@ -28,17 +28,26 @@ def solve_homography(u, v):
     cell = np.hstack((u_x, u_y, np.ones((N, 1))))
     zeros = np.zeros((N, 3))
 
+    v_xy = np.hstack((v_x, v_y)).reshape(8, 1)
 
-    A_u = np.hstack((cell, zeros, -1 * u_x * v_x, -1 * u_y * v_x, -1 * v_x))
-    A_v = np.hstack((zeros, cell, -1 * u_x * v_y, -1 * u_y * v_y, -1 * v_y))
+    A_u = np.hstack((cell, zeros, -1 * u_x * v_x, -1 * u_y * v_x, -1*v_x))
+    A_v = np.hstack((zeros, cell, -1 * u_x * v_y, -1 * u_y * v_y, -1*v_y))
     A = np.vstack((A_u, A_v))
 
+    A_u2 = np.hstack((cell, zeros, -1 * u_x * v_x, -1 * u_y * v_x))
+    A_v2 = np.hstack((zeros, cell, -1 * u_x * v_y, -1 * u_y * v_y))
+    A2 = np.vstack((A_u2, A_v2))
+
     # TODO: 2.solve H with A
+    A2_inv = np.linalg.inv(A2)
+    HH = np.dot(A2_inv, v_xy)
+    HH = np.append(HH,1)
+
     _, _, VT = np.linalg.svd(A)
     h = VT[-1,:] / VT[-1,-1]
     H = h.reshape(3, 3)
-    print(A.shape)
-    return H
+    HH = H.reshape(3, 3)
+    return HH
 
 
 def warping(src, dst, H, ymin, ymax, xmin, xmax, direction='b'):
@@ -83,14 +92,14 @@ def warping(src, dst, H, ymin, ymax, xmin, xmax, direction='b'):
     u_x = u_x.reshape(-1).astype(int)
     u_y = u_y.reshape(-1).astype(int)
     # TODO: 2.reshape the destination pixels as N x 3 homogeneous coordinate
-    u = np.vstack((u_x, u_y, np.ones(len(u_x))))
+    u = np.vstack((u_x, u_y, np.ones(len(u_x)))) # 填1是因為z軸不變
 
     if direction == 'b':
         # TODO: 3.apply H_inv to the destination pixels and retrieve (u,v) pixels, then reshape to (ymax-ymin),(xmax-xmin)
         H_inv = np.linalg.inv(H)
         v = H_inv @ u
         v = v / v[-1]
-
+        
         v_x = v[0]
         v_y = v[1]
 
@@ -106,13 +115,17 @@ def warping(src, dst, H, ymin, ymax, xmin, xmax, direction='b'):
 
     elif direction == 'f':
         # TODO: 3.apply H to the source pixels and retrieve (u,v) pixels, then reshape to (ymax-ymin),(xmax-xmin)
+        #ori 2 new
         v = H @ u
+        print(v[-1])
         v = v / v[-1]
+        #取整
         v_x = np.round(v[0]).astype(int)
         v_y = np.round(v[1]).astype(int)
 
         # TODO: 4.calculate the mask of the transformed coordinate (should not exceed the boundaries of destination image)
         mask = np.where((v_x >= 0) & (v_x < w_dst) & (v_y >= 0) & (v_y < h_dst))
+
         
         # TODO: 5.filter the valid coordinates using previous obtained mask
         u_x, u_y = u_x[mask], u_y[mask]
