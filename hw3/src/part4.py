@@ -6,6 +6,7 @@ from utils import solve_homography, warping
 
 random.seed(999)
 
+
 def panorama(imgs):
     """
     Image stitching with estimated homograpy between consecutive
@@ -30,6 +31,7 @@ def panorama(imgs):
         print(idx)
         im1 = imgs[idx]
         im2 = imgs[idx + 1]
+        w += im1.shape[1]  
 
         # TODO: 1.feature detection & matching
         kp1, des1 = orb.detectAndCompute(im1, None)
@@ -49,8 +51,9 @@ def panorama(imgs):
         # TODO: 2. apply RANSAC to choose best H
         #parameter
         p = 0.99
-        e = 0.7
-        s = 4
+        e = 0.5
+        s = 5
+
         epoch = int(np.log(1 - p) / np.log(1 - (1 - e) ** s))
         threshold = 4
         inline_num_max = 0
